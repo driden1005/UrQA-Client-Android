@@ -47,7 +47,7 @@ public final class URQAController {
 //(StateData.ServerAddress + url
 	public static int NativeCrashCallback(String fileName) {
 		ErrorReport report = ErrorReportFactory.CreateNativeErrorReport(StateData.AppContext);
-		Sender.sendErrorsWithNative(report, Sender.NATIVE_EXCEPTION_URL, fileName);
+		Sender.sendExceptionWithNative(report, Sender.NATIVE_EXCEPTION_URL, fileName);
 		return 0;
 	}
 	
@@ -77,35 +77,15 @@ public final class URQAController {
 		
 		//about init encrytion
 		SharedPreferences prefs = context.getSharedPreferences(Encryptor.ENCRYPTION, Context.MODE_PRIVATE);
-		final SharedPreferences.Editor editor = prefs.edit();
 		String baseKey = prefs.getString(Encryptor.ENCRYPTION_BASE_KEY, null);
 		String token = prefs.getString(Encryptor.ENCRYPTION_TOKEN, null);
 		
 		if(baseKey == null) {
-			new Thread() {
-				public void run() {
-					KeyStore ks;
-					try {
-						ks = Encryptor.getToken();
-						editor.putString(Encryptor.ENCRYPTION_BASE_KEY, ks.baseKey);
-						editor.putString(Encryptor.ENCRYPTION_TOKEN, ks.token);
-						editor.commit();
-						Encryptor.token = ks.baseKey;
-						Encryptor.baseKey = ks.token;
-					} catch (Exception e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				};
-
-			}.start();
-
+			Encryptor.requestToken(context);
 		} else  {
 			Encryptor.token = token;
 			Encryptor.baseKey = baseKey;
 		}
-	
-
 		
 		EventPathManager.ClearEvent();
 	}
@@ -126,47 +106,13 @@ public final class URQAController {
 
 	}
 
-	/*
-	 * public static void StartActivity(Context context) { //이벤트 패스 클리어
-	 * EventPathManager.ClearEvent();
-	 * 
-	 * 
-	 * }
-	 * 
-	 * public static void EndActivity(Context context) { //SendEvent
-	 * EventPathToJson eventpath = new EventPathToJson(); eventpath.eventpaths =
-	 * EventPathManager.getEventPath();
-	 * 
-	 * //없으면 보낼 필요 없지요... if(eventpath.eventpaths.size() == 0) return ;
-	 * 
-	 * if(StateData.SessionID == "") { class SessionID extends Network {
-	 * 
-	 * @Override public void CallbackFunction(HttpResponse responseGet
-	 * ,HttpEntity resEntity) { String jsondata = ""; try { jsondata =
-	 * EntityUtils.toString(resEntity); } catch (ParseException e) { // TODO
-	 * Auto-generated catch block e.printStackTrace(); } catch (IOException e) {
-	 * // TODO Auto-generated catch block e.printStackTrace(); } IDSession
-	 * idsession =gson.fromJson(jsondata, IDSession.class); StateData.SessionID
-	 * = idsession.idsession; } } SendAPIApp sendAPIKEY = new SendAPIApp();
-	 * sendAPIKEY.apikey = StateData.APIKEY; sendAPIKEY.appversion =
-	 * DeviceCollector.GetAppVersion(context);
-	 * 
-	 * SessionID getID = new SessionID();
-	 * getID.SetNetwork(StateData.ServerAddress + "client/connect", sendAPIKEY,
-	 * Network.Networkformula.POST); getID.start(); return; }
-	 * 
-	 * 
-	 * eventpath.idsession = StateData.SessionID; Network SendEventPath = new
-	 * Network(); SendEventPath.SetNetwork(StateData.ServerAddress +
-	 * "client/send/eventpath", eventpath, Network.Networkformula.POST);
-	 * SendEventPath.start(); }
-	 */
+
 	public static void SendException(Exception e, String Tag, ErrorRank rank) {
 		ErrorReport report = ErrorReportFactory.CreateErrorReport(e, Tag, rank,
 				StateData.AppContext);
 		
 		try {
-			Sender.sendErrors(report, Sender.EXCEPTION_URL);
+			Sender.sendException(report, Sender.EXCEPTION_URL);
 		} catch (JSONException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();

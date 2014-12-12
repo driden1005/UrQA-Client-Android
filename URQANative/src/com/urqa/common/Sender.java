@@ -14,10 +14,9 @@ import com.urqa.library.model.Authentication;
 
 public class Sender {
 	
-	public static final String EXCEPTION_URL = StateData.ServerAddress + "client/send/exception/";
+	public static final String EXCEPTION_URL = StateData.ServerAddress + "client/send/exception";
 	public static final String NATIVE_EXCEPTION_URL = StateData.ServerAddress + "client/send/exception/native";
 	public static final String SESSION_URL = StateData.ServerAddress + "client/connect";
-	
 
 	public static void sendSession(Authentication auth, String url)
 			 {
@@ -28,7 +27,7 @@ public class Sender {
 		network.start();
 	}
 
-	public static void sendErrors(ErrorReport report, String url)
+	public static void sendException(ErrorReport report, String url)
 			throws JSONException {
 
 		Network network = new Network();
@@ -36,15 +35,10 @@ public class Sender {
 				Network.Method.POST, true);
 		network.start();
 
-//		try {
-//			network.join();
-//		} catch (InterruptedException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
+
 	}
 
-	public static void sendErrorsWithNative(ErrorReport report, String url,
+	public static void sendExceptionWithNative(ErrorReport report, String url,
 			String fileName) {
 		try {
 			Network network = new Network();
