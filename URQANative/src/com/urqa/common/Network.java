@@ -1,7 +1,5 @@
 package com.urqa.common;
 
-import java.util.concurrent.TimeoutException;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -13,46 +11,42 @@ import org.apache.http.params.HttpParams;
 
 import android.util.Log;
 
-import com.urqa.library.model.JsonInterface;
-
 public class Network extends Thread {
-
-	@Deprecated
-	public enum Networkformula {
-		GET, POST
-	}
 
 	public enum Method {
 		GET, POST
 	}
 
 	private String mURL;
-	private JsonInterface mJson;
-	private Method mMethod;
+	private String data;
+	private Method method;
+	private boolean isEncrypt;
 
-	public void setNetwork(String url, JsonInterface json, Method method) {
-		mURL = url;
-		mJson = json;
-		mMethod = method;
+	
+	public void setNetworkOption(String mURL, String data, Method method, boolean isEncrypt) {
+		this.mURL = mURL;
+		this.data = data;
+		this.method = method;
+		this.isEncrypt = isEncrypt;
 	}
 
-	public void CallbackFunction(HttpResponse responseGet, HttpEntity resEntity) {
+	public void onNetworkEnd(HttpResponse responseGet, HttpEntity resEntity) {
 
 	}
-
+	
 	@Override
 	public void run() {
-		switch (mMethod) {
+		switch (method) {
 		case GET:
-			GetSend();
+			sendGetMethod();
 			break;
 		case POST:
-			PostSend();
+			sendPostMethod();
 			break;
 		}
 	}
 
-	private void GetSend() {
+	private void sendGetMethod() {
 		try {
 			HttpClient client = new DefaultHttpClient();
 			setHttpParams(client.getParams());
@@ -61,15 +55,14 @@ public class Network extends Thread {
 			HttpResponse responseGet = client.execute(get);
 			HttpEntity resEntityGet = responseGet.getEntity();
 
-			if (resEntityGet != null) {
-				CallbackFunction(responseGet, resEntityGet);
-			}
+			onNetworkEnd(responseGet, resEntityGet);
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	private void PostSend() {
+	private void sendPostMethod() {
 		try {
 			HttpClient client = new DefaultHttpClient();
 			setHttpParams(client.getParams());
@@ -77,9 +70,14 @@ public class Network extends Thread {
 			HttpPost post = new HttpPost(mURL);
 
 			post.setHeader("Content-Type", "application/json; charset=utf-8");
+			post.addHeader("version", "1.0.0");
 
-			String test = mJson.toJSONObject().toString();
-			StringEntity input = new StringEntity(test, "UTF-8");
+			if (isEncrypt) {
+				post.addHeader("Urqa-Encrypt-Opt","aes-256-cbc-pkcs5padding+base64");
+				data = Encrytor.encrypt(data);
+			}
+
+			StringEntity input = new StringEntity(data, "UTF-8");
 
 			post.setEntity(input);
 			HttpResponse responsePOST = client.execute(post);
@@ -89,7 +87,7 @@ public class Network extends Thread {
 
 			Log.i("UrQA", String.format("UrQA Response Code : %d", code));
 
-			CallbackFunction(responsePOST, resEntity);
+			onNetworkEnd(responsePOST, resEntity);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -100,5 +98,7 @@ public class Network extends Thread {
 		params.setParameter("http.connection.timeout", 5000);
 		params.setParameter("http.socket.timeout", 5000);
 	}
+
+
 
 }
